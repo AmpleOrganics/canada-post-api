@@ -3,12 +3,30 @@ module CanadaPost
     class Rate < Base
       # Sends post request to CanadaPost API and parse the response, a Rate object is created if the response is successful
       def process_request
+
+        # pp '----- CanadaPost::Request::Rate'
+        # puts ""
+        # puts ""
+        # puts ""
+        # pp "------> build_xml"
+        # pp build_xml
+        # pp "build_xml <------"
+        # puts ""
+        # puts ""
+        # puts ""
+        # pp "rate_headers: #{rate_headers}"
+
         api_response = self.class.post(api_url,
           body: build_xml,
           headers: rate_headers,
-          basic_auth: @authorization 
+          basic_auth: @authorization
           )
         response = parse_response(api_response)
+
+        # pp "---------- RESPONSE"
+        # pp response['messages']
+        # pp "RESPONSE ----------"
+
         if success?(response)
           rate_reply_details = response[:price_quotes][:price_quote] || []
           rate_reply_details = [rate_reply_details] if rate_reply_details.is_a? Hash
@@ -16,8 +34,8 @@ module CanadaPost
             CanadaPost::Rate.new(rate_reply)
           end
         else
-          error_message = if response[:messages]
-            response[:messages][:message][:description]
+          error_message = if response['messages']
+            response.dig('messages', 'message', 'description')
           else
             'api_response.response'
           end
@@ -44,7 +62,7 @@ module CanadaPost
         builder = Nokogiri::XML::Builder.new do |xml|
           xml.send(:"mailing-scenario", xmlns: ns) {
             add_requested_shipment(xml)
-            
+
           }
         end
         builder.doc.root.to_xml
